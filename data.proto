@@ -1,0 +1,68 @@
+syntax = "proto3";
+
+
+
+package data;
+
+
+message PersonInput {
+    string Guid = 2;
+    string FirstName = 3;
+    string LastName = 4;
+    string Email = 5;
+    int    Age = 6;
+    string Type = 7;
+}
+
+message Person {
+    ID int = 1;
+    string Guid = 2;
+    string FirstName = 3;
+    string LastName = 4;
+    string Email = 5;
+    int    Age = 6; 
+    string Type = 7;
+}
+
+// Get One And Get All Person Requests inputs.
+message PersonByGuidRequest {
+    string Guid = 2;
+}
+
+message FindAllPeople {
+    string FirstName = 3;
+    string LastName = 5;
+    string Email = 4;
+}
+
+service Person {
+    rpc CreatePerson(PersonInput) returns (Person);
+    rpc UpdatePerson(PersonInput) returns (Person);
+    rpc GetPersonByGuid(PersonByGuidRequest) returns (Person);
+    rpc FindAllPeople(FindAllPeople) returns (stream Person);
+}
+
+// // The request message containing the task to be added.
+// message AddTaskRequest {
+//     string title = 1;
+// }
+
+// // The response message containing the added task.
+// message Task {
+//     string id = 1;
+//     string title = 2;
+// }
+
+// // The request message for listing tasks.
+// message ListTasksRequest {}
+
+// // The response message containing the list of tasks.
+// message ListTasksResponse {
+//     repeated Task tasks = 1;
+// }
+
+// The Task service definition.
+service TaskService {
+    rpc AddTask(AddTaskRequest) returns (Task);
+    rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+}
