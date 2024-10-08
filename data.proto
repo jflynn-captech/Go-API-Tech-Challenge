@@ -2,26 +2,30 @@ syntax = "proto3";
 
 
 
-package data;
+package protodata;
 
+option go_package = "./protodata";
+// message PersonInput {
+//     string Guid = 2;
+//     string FirstName = 3;
+//     string LastName = 4;
+//     string Email = 5;
+//     int32  Age = 6;
+//     string Type = 7;
+// }
 
-message PersonInput {
+message Person {
+    uint64 ID = 1;
     string Guid = 2;
     string FirstName = 3;
     string LastName = 4;
     string Email = 5;
-    int    Age = 6;
+    uint32 Age = 6; 
     string Type = 7;
 }
 
-message Person {
-    ID int = 1;
-    string Guid = 2;
-    string FirstName = 3;
-    string LastName = 4;
-    string Email = 5;
-    int    Age = 6; 
-    string Type = 7;
+message PersonList {
+    repeated Person people = 1;
 }
 
 // Get One And Get All Person Requests inputs.
@@ -29,17 +33,15 @@ message PersonByGuidRequest {
     string Guid = 2;
 }
 
-message FindAllPeople {
-    string FirstName = 3;
-    string LastName = 5;
-    string Email = 4;
+message Filters {
+    map<string, string> filters = 1;
 }
 
-service Person {
-    rpc CreatePerson(PersonInput) returns (Person);
-    rpc UpdatePerson(PersonInput) returns (Person);
+service PersonRepository {
+    rpc CreatePerson(Person) returns (Person);
+    rpc UpdatePerson(Person) returns (Person);
     rpc GetPersonByGuid(PersonByGuidRequest) returns (Person);
-    rpc FindAllPeople(FindAllPeople) returns (stream Person);
+    rpc FindAllPeople(Filters) returns (PersonList);
 }
 
 // // The request message containing the task to be added.
@@ -62,7 +64,7 @@ service Person {
 // }
 
 // The Task service definition.
-service TaskService {
-    rpc AddTask(AddTaskRequest) returns (Task);
-    rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
-}
+// service TaskService {
+//     rpc AddTask(AddTaskRequest) returns (Task);
+//     rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
+// }
