@@ -1,13 +1,14 @@
 package repository
 
 import (
-	"fmt"
-	"strings"
+	"context"
+	"time"
 
 	"gorm.io/gorm"
 	"jf.go.techchallenge/internal/apperror"
 	"jf.go.techchallenge/internal/applog"
 	"jf.go.techchallenge/internal/models"
+	"jf.go.techchallenge/protodata"
 )
 
 type Person interface {
@@ -20,29 +21,49 @@ type Person interface {
 	Delete(person *models.Person) error
 }
 
-func NewPerson(db *gorm.DB, logger *applog.AppLogger) Person {
+func NewPerson(db *gorm.DB, logger *applog.AppLogger, client protodata.PersonRepositoryClient) Person {
 	return &PersonRepositoryImpl{
 		db:     db,
 		logger: logger,
+		client: client,
 	}
 }
 
 type PersonRepositoryImpl struct {
 	db     *gorm.DB
 	logger *applog.AppLogger
+	client protodata.PersonRepositoryClient
 }
 
 func (s PersonRepositoryImpl) FindAll(filters Filters) ([]models.Person, error) {
 	var persons []models.Person
-	tx := s.db.Table("person")
 
-	// process query parameteres.
-	for key, value := range filters {
-		tx.Where(fmt.Sprintf("%s like ?", key), strings.Join([]string{"%", value, "%"}, ""))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	protoPersonList, err := s.client.FindAllPeople(ctx, &protodata.Filters{Filters: filters})
+
+	if err != nil {
+		return nil, err
 	}
 
-	result := tx.Find(&persons)
-	return persons, LogDBErr(s.logger, result.Error, "Failed to Query Person Table")
+	for _, protoPers := range protoPersonList.People {
+		persons = append(persons, models.Person{
+			ID:        uint(protoPers.ID),
+			Guid:      protoPers.Guid,
+			FirstName: protoPers.FirstName,
+			LastName:  protoPers.LastName,
+			Email:     protoPers.Email,
+		})
+
+	}
+	return persons, err
+	// // process query parameteres.
+	// for key, value := range filters {
+	// 	tx.Where(fmt.Sprintf("%s like ?", key), strings.Join([]string{"%", value, "%"}, ""))
+	// }
+
+	// result := tx.Find(&persons)
+	// return persons, LogDBErr(s.logger, result.Error, "Failed to Query Person Table")
 }
 
 func (s PersonRepositoryImpl) FindOne(guid string) (models.Person, error) {

@@ -10,6 +10,7 @@ import (
 
 	"go.uber.org/fx"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 
 	"jf.go.techchallenge/internal/applog"
 	"jf.go.techchallenge/internal/config"
@@ -17,6 +18,7 @@ import (
 	"jf.go.techchallenge/internal/handler"
 	"jf.go.techchallenge/internal/repository"
 	"jf.go.techchallenge/internal/services"
+	"jf.go.techchallenge/protodata"
 )
 
 func main() {
@@ -34,15 +36,15 @@ func main() {
 
 			func() *grpc.ClientConn {
 				// todo look into WithInsecure alternative?
-				conn, err := grpc.NewClient("localhost:80051")
+				conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 				if err != nil {
-					log.Fatalf("Failed to connect to grpc service")
+					log.Fatalf("Failed to connect to grpc service", err)
 				}
 				return conn
 			},
 
-			func(conn *grpc.ClientConn) *protodata.PersonRepositoryClient {
+			func(conn *grpc.ClientConn) protodata.PersonRepositoryClient {
 				return protodata.NewPersonRepositoryClient(conn)
 			},
 
