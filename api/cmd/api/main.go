@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"go.uber.org/fx"
+	"google.golang.org/grpc"
 
 	"jf.go.techchallenge/internal/applog"
 	"jf.go.techchallenge/internal/config"
@@ -30,6 +31,20 @@ func main() {
 
 			services.NewPerson,
 			services.NewCourse,
+
+			func() *grpc.ClientConn {
+				// todo look into WithInsecure alternative?
+				conn, err := grpc.NewClient("localhost:80051")
+
+				if err != nil {
+					log.Fatalf("Failed to connect to grpc service")
+				}
+				return conn
+			},
+
+			func(conn *grpc.ClientConn) *protodata.PersonRepositoryClient {
+				return protodata.NewPersonRepositoryClient(conn)
+			},
 
 			TagRoute(handler.GetOnePerson),
 			TagRoute(handler.GetAllPersons),
