@@ -2,10 +2,10 @@ package repository
 
 import (
 	"fmt"
-	"log"
 	"strings"
 
 	"gorm.io/gorm"
+	"jf.go.techchallenge.data/applog"
 	"jf.go.techchallenge.data/models"
 )
 
@@ -19,7 +19,7 @@ type Person interface {
 	Delete(person *models.Person) error
 }
 
-func NewPerson(db *gorm.DB, logger *log.Logger) Person {
+func NewPerson(db *gorm.DB, logger *applog.AppLogger) Person {
 	return &PersonRepositoryImpl{
 		db:     db,
 		logger: logger,
@@ -28,7 +28,7 @@ func NewPerson(db *gorm.DB, logger *log.Logger) Person {
 
 type PersonRepositoryImpl struct {
 	db     *gorm.DB
-	logger *log.Logger
+	logger *applog.AppLogger
 }
 
 func (s PersonRepositoryImpl) FindAll(filters Filters) ([]models.Person, error) {

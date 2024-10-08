@@ -5,7 +5,8 @@ import (
 	"os"
 	"strconv"
 
-	"jf.go.techchallenge/internal/applog"
+	"jf.go.techchallenge.data/applog"
+	// "jf.go.techchallenge/internal/applog"
 )
 
 type Database struct {

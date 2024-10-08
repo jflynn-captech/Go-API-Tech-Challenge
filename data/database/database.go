@@ -7,8 +7,8 @@ import (
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
-	"jf.go.techchallenge/internal/applog"
-	"jf.go.techchallenge/internal/config"
+	"jf.go.techchallenge.data/applog"
+	"jf.go.techchallenge.data/config"
 )
 
 // Start Database

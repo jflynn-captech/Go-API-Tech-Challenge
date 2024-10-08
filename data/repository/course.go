@@ -5,9 +5,8 @@ import (
 	"strings"
 
 	"gorm.io/gorm"
-	"jf.go.techchallenge/internal/apperror"
-	"jf.go.techchallenge/internal/applog"
-	"jf.go.techchallenge/internal/models"
+	"jf.go.techchallenge.data/applog"
+	"jf.go.techchallenge.data/models"
 )
 
 type Course interface {
@@ -50,7 +49,7 @@ func (s CourseRepositoryImpl) FindOne(guid string) (models.Course, error) {
 	result := s.db.Table("course").Find(&course, "guid = ?", guid)
 
 	if result.RowsAffected == 0 {
-		return course, apperror.NotFound("Course: %s Not Found", guid)
+		return course, fmt.Errorf("Course: %s Not Found", guid)
 	}
 
 	return course, LogDBErr(s.logger, result.Error, "Failed to Query Course Table")

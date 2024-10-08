@@ -5,16 +5,19 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"time"
 
+	"google.golang.org/grpc"
+	"jf.go.techchallenge.data/applog"
+	"jf.go.techchallenge.data/config"
+	"jf.go.techchallenge.data/database"
 	pb "jf.go.techchallenge.data/protodata"
 	"jf.go.techchallenge.data/repository"
-
-	"google.golang.org/grpc"
 )
 
 type PersonRepositoryServer struct {
-	pb.UnimplementedPersonServiceServer
+	pb.UnimplementedPersonRepositoryServer
 	repository repository.Person
 }
 
@@ -61,18 +64,34 @@ func generateID() string {
 
 func main() {
 
-    
+	lis, err := net.Listen("tcp", ":50051")
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
 
-	// lis, err := net.Listen("tcp", ":50051")
-	// if err != nil {
-	// 	log.Fatalf("failed to listen: %v", err)
-	// }
+	logger := applog.New(log.New(os.Stdout, "\r\n", log.LstdFlags))
 
-	// s := grpc.NewServer()
-	// pb.RegisterTaskServiceServer(s, &server{tasks: make(map[string]string)})
+	config, err := config.New(logger)
 
-	// log.Println("Server is running on port 50051...")
-	// if err := s.Serve(lis); err != nil {
-	// 	log.Fatalf("failed to serve: %v", err)
-	// }
+	if err != nil {
+		logger.Fatal("Failed to load config", err)
+	}
+
+	db, err := database.New(config, logger)
+
+	if err != nil {
+		logger.Fatal("Failed to load config", err)
+	}
+
+	personRepository := &PersonRepositoryServer{
+		repository: repository.NewPerson(db, logger),
+	}
+
+	s := grpc.NewServer()
+	pb.RegisterPersonRepositoryServer(s, personRepository)
+
+	log.Println("Server is running on port 50051...")
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }

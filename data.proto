@@ -5,14 +5,6 @@ syntax = "proto3";
 package protodata;
 
 option go_package = "./protodata";
-// message PersonInput {
-//     string Guid = 2;
-//     string FirstName = 3;
-//     string LastName = 4;
-//     string Email = 5;
-//     int32  Age = 6;
-//     string Type = 7;
-// }
 
 message Person {
     uint64 ID = 1;
@@ -38,9 +30,9 @@ message Filters {
 }
 
 service PersonRepository {
-    rpc CreatePerson(Person) returns (Person);
-    rpc UpdatePerson(Person) returns (Person);
-    rpc GetPersonByGuid(PersonByGuidRequest) returns (Person);
+    // rpc CreatePerson(Person) returns (Person);
+    // rpc UpdatePerson(Person) returns (Person);
+    // rpc GetPersonByGuid(PersonByGuidRequest) returns (Person);
     rpc FindAllPeople(Filters) returns (PersonList);
 }
 

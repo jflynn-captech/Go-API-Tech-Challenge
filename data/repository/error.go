@@ -1,11 +1,9 @@
 package repository
 
-import (
-	"net/http"
+import "jf.go.techchallenge.data/applog"
 
-	"jf.go.techchallenge/internal/apperror"
-	"jf.go.techchallenge/internal/applog"
-)
+// "jf.go.techchallenge/internal/apperror"
+// "jf.go.techchallenge/internal/applog"
 
 // Logs any Gorm database errors and will convert to 500 status code errors to be returned to the client.
 func LogDBErr(logger *applog.AppLogger, gormErr error, msg string) error {
@@ -14,5 +12,6 @@ func LogDBErr(logger *applog.AppLogger, gormErr error, msg string) error {
 	}
 
 	logger.Debug(msg, gormErr)
-	return apperror.New(http.StatusInternalServerError, "Internal Server Error, check log for details")
+	return gormErr
+	// return apperror.New(http.StatusInternalServerError, "Internal Server Error, check log for details")
 }
