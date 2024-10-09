@@ -19,17 +19,20 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	PersonRepository_FindAllPeople_FullMethodName = "/protodata.PersonRepository/FindAllPeople"
+	PersonRepository_Save_FullMethodName      = "/protodata.PersonRepository/Save"
+	PersonRepository_GetByGuid_FullMethodName = "/protodata.PersonRepository/GetByGuid"
+	PersonRepository_GetAll_FullMethodName    = "/protodata.PersonRepository/GetAll"
+	PersonRepository_Delete_FullMethodName    = "/protodata.PersonRepository/Delete"
 )
 
 // PersonRepositoryClient is the client API for PersonRepository service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type PersonRepositoryClient interface {
-	// rpc CreatePerson(Person) returns (Person);
-	// rpc UpdatePerson(Person) returns (Person);
-	// rpc GetPersonByGuid(PersonByGuidRequest) returns (Person);
-	FindAllPeople(ctx context.Context, in *Filters, opts ...grpc.CallOption) (*PersonList, error)
+	Save(ctx context.Context, in *Person, opts ...grpc.CallOption) (*Person, error)
+	GetByGuid(ctx context.Context, in *Guid, opts ...grpc.CallOption) (*Person, error)
+	GetAll(ctx context.Context, in *Filters, opts ...grpc.CallOption) (*PersonList, error)
+	Delete(ctx context.Context, in *Person, opts ...grpc.CallOption) (*Guid, error)
 }
 
 type personRepositoryClient struct {
@@ -40,10 +43,40 @@ func NewPersonRepositoryClient(cc grpc.ClientConnInterface) PersonRepositoryClie
 	return &personRepositoryClient{cc}
 }
 
-func (c *personRepositoryClient) FindAllPeople(ctx context.Context, in *Filters, opts ...grpc.CallOption) (*PersonList, error) {
+func (c *personRepositoryClient) Save(ctx context.Context, in *Person, opts ...grpc.CallOption) (*Person, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Person)
+	err := c.cc.Invoke(ctx, PersonRepository_Save_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *personRepositoryClient) GetByGuid(ctx context.Context, in *Guid, opts ...grpc.CallOption) (*Person, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Person)
+	err := c.cc.Invoke(ctx, PersonRepository_GetByGuid_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *personRepositoryClient) GetAll(ctx context.Context, in *Filters, opts ...grpc.CallOption) (*PersonList, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(PersonList)
-	err := c.cc.Invoke(ctx, PersonRepository_FindAllPeople_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, PersonRepository_GetAll_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *personRepositoryClient) Delete(ctx context.Context, in *Person, opts ...grpc.CallOption) (*Guid, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Guid)
+	err := c.cc.Invoke(ctx, PersonRepository_Delete_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -54,10 +87,10 @@ func (c *personRepositoryClient) FindAllPeople(ctx context.Context, in *Filters,
 // All implementations must embed UnimplementedPersonRepositoryServer
 // for forward compatibility.
 type PersonRepositoryServer interface {
-	// rpc CreatePerson(Person) returns (Person);
-	// rpc UpdatePerson(Person) returns (Person);
-	// rpc GetPersonByGuid(PersonByGuidRequest) returns (Person);
-	FindAllPeople(context.Context, *Filters) (*PersonList, error)
+	Save(context.Context, *Person) (*Person, error)
+	GetByGuid(context.Context, *Guid) (*Person, error)
+	GetAll(context.Context, *Filters) (*PersonList, error)
+	Delete(context.Context, *Person) (*Guid, error)
 	mustEmbedUnimplementedPersonRepositoryServer()
 }
 
@@ -68,8 +101,17 @@ type PersonRepositoryServer interface {
 // pointer dereference when methods are called.
 type UnimplementedPersonRepositoryServer struct{}
 
-func (UnimplementedPersonRepositoryServer) FindAllPeople(context.Context, *Filters) (*PersonList, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method FindAllPeople not implemented")
+func (UnimplementedPersonRepositoryServer) Save(context.Context, *Person) (*Person, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Save not implemented")
+}
+func (UnimplementedPersonRepositoryServer) GetByGuid(context.Context, *Guid) (*Person, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetByGuid not implemented")
+}
+func (UnimplementedPersonRepositoryServer) GetAll(context.Context, *Filters) (*PersonList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAll not implemented")
+}
+func (UnimplementedPersonRepositoryServer) Delete(context.Context, *Person) (*Guid, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
 }
 func (UnimplementedPersonRepositoryServer) mustEmbedUnimplementedPersonRepositoryServer() {}
 func (UnimplementedPersonRepositoryServer) testEmbeddedByValue()                          {}
@@ -92,20 +134,74 @@ func RegisterPersonRepositoryServer(s grpc.ServiceRegistrar, srv PersonRepositor
 	s.RegisterService(&PersonRepository_ServiceDesc, srv)
 }
 
-func _PersonRepository_FindAllPeople_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _PersonRepository_Save_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Person)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PersonRepositoryServer).Save(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PersonRepository_Save_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PersonRepositoryServer).Save(ctx, req.(*Person))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PersonRepository_GetByGuid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Guid)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PersonRepositoryServer).GetByGuid(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PersonRepository_GetByGuid_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PersonRepositoryServer).GetByGuid(ctx, req.(*Guid))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PersonRepository_GetAll_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(Filters)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(PersonRepositoryServer).FindAllPeople(ctx, in)
+		return srv.(PersonRepositoryServer).GetAll(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: PersonRepository_FindAllPeople_FullMethodName,
+		FullMethod: PersonRepository_GetAll_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(PersonRepositoryServer).FindAllPeople(ctx, req.(*Filters))
+		return srv.(PersonRepositoryServer).GetAll(ctx, req.(*Filters))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _PersonRepository_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Person)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(PersonRepositoryServer).Delete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: PersonRepository_Delete_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(PersonRepositoryServer).Delete(ctx, req.(*Person))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -118,8 +214,236 @@ var PersonRepository_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*PersonRepositoryServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "FindAllPeople",
-			Handler:    _PersonRepository_FindAllPeople_Handler,
+			MethodName: "Save",
+			Handler:    _PersonRepository_Save_Handler,
+		},
+		{
+			MethodName: "GetByGuid",
+			Handler:    _PersonRepository_GetByGuid_Handler,
+		},
+		{
+			MethodName: "GetAll",
+			Handler:    _PersonRepository_GetAll_Handler,
+		},
+		{
+			MethodName: "Delete",
+			Handler:    _PersonRepository_Delete_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "data.proto",
+}
+
+const (
+	CourseRepository_Save_FullMethodName      = "/protodata.CourseRepository/Save"
+	CourseRepository_GetByGuid_FullMethodName = "/protodata.CourseRepository/GetByGuid"
+	CourseRepository_GetAll_FullMethodName    = "/protodata.CourseRepository/GetAll"
+	CourseRepository_Delete_FullMethodName    = "/protodata.CourseRepository/Delete"
+)
+
+// CourseRepositoryClient is the client API for CourseRepository service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type CourseRepositoryClient interface {
+	Save(ctx context.Context, in *Course, opts ...grpc.CallOption) (*Course, error)
+	GetByGuid(ctx context.Context, in *Guid, opts ...grpc.CallOption) (*Course, error)
+	GetAll(ctx context.Context, in *Filters, opts ...grpc.CallOption) (*CourseList, error)
+	Delete(ctx context.Context, in *Course, opts ...grpc.CallOption) (*Guid, error)
+}
+
+type courseRepositoryClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewCourseRepositoryClient(cc grpc.ClientConnInterface) CourseRepositoryClient {
+	return &courseRepositoryClient{cc}
+}
+
+func (c *courseRepositoryClient) Save(ctx context.Context, in *Course, opts ...grpc.CallOption) (*Course, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Course)
+	err := c.cc.Invoke(ctx, CourseRepository_Save_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseRepositoryClient) GetByGuid(ctx context.Context, in *Guid, opts ...grpc.CallOption) (*Course, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Course)
+	err := c.cc.Invoke(ctx, CourseRepository_GetByGuid_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseRepositoryClient) GetAll(ctx context.Context, in *Filters, opts ...grpc.CallOption) (*CourseList, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(CourseList)
+	err := c.cc.Invoke(ctx, CourseRepository_GetAll_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *courseRepositoryClient) Delete(ctx context.Context, in *Course, opts ...grpc.CallOption) (*Guid, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Guid)
+	err := c.cc.Invoke(ctx, CourseRepository_Delete_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// CourseRepositoryServer is the server API for CourseRepository service.
+// All implementations must embed UnimplementedCourseRepositoryServer
+// for forward compatibility.
+type CourseRepositoryServer interface {
+	Save(context.Context, *Course) (*Course, error)
+	GetByGuid(context.Context, *Guid) (*Course, error)
+	GetAll(context.Context, *Filters) (*CourseList, error)
+	Delete(context.Context, *Course) (*Guid, error)
+	mustEmbedUnimplementedCourseRepositoryServer()
+}
+
+// UnimplementedCourseRepositoryServer must be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedCourseRepositoryServer struct{}
+
+func (UnimplementedCourseRepositoryServer) Save(context.Context, *Course) (*Course, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Save not implemented")
+}
+func (UnimplementedCourseRepositoryServer) GetByGuid(context.Context, *Guid) (*Course, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetByGuid not implemented")
+}
+func (UnimplementedCourseRepositoryServer) GetAll(context.Context, *Filters) (*CourseList, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetAll not implemented")
+}
+func (UnimplementedCourseRepositoryServer) Delete(context.Context, *Course) (*Guid, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method Delete not implemented")
+}
+func (UnimplementedCourseRepositoryServer) mustEmbedUnimplementedCourseRepositoryServer() {}
+func (UnimplementedCourseRepositoryServer) testEmbeddedByValue()                          {}
+
+// UnsafeCourseRepositoryServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to CourseRepositoryServer will
+// result in compilation errors.
+type UnsafeCourseRepositoryServer interface {
+	mustEmbedUnimplementedCourseRepositoryServer()
+}
+
+func RegisterCourseRepositoryServer(s grpc.ServiceRegistrar, srv CourseRepositoryServer) {
+	// If the following call pancis, it indicates UnimplementedCourseRepositoryServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&CourseRepository_ServiceDesc, srv)
+}
+
+func _CourseRepository_Save_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Course)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseRepositoryServer).Save(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseRepository_Save_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseRepositoryServer).Save(ctx, req.(*Course))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseRepository_GetByGuid_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Guid)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseRepositoryServer).GetByGuid(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseRepository_GetByGuid_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseRepositoryServer).GetByGuid(ctx, req.(*Guid))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseRepository_GetAll_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Filters)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseRepositoryServer).GetAll(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseRepository_GetAll_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseRepositoryServer).GetAll(ctx, req.(*Filters))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _CourseRepository_Delete_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Course)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(CourseRepositoryServer).Delete(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: CourseRepository_Delete_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(CourseRepositoryServer).Delete(ctx, req.(*Course))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// CourseRepository_ServiceDesc is the grpc.ServiceDesc for CourseRepository service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var CourseRepository_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "protodata.CourseRepository",
+	HandlerType: (*CourseRepositoryServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "Save",
+			Handler:    _CourseRepository_Save_Handler,
+		},
+		{
+			MethodName: "GetByGuid",
+			Handler:    _CourseRepository_GetByGuid_Handler,
+		},
+		{
+			MethodName: "GetAll",
+			Handler:    _CourseRepository_GetAll_Handler,
+		},
+		{
+			MethodName: "Delete",
+			Handler:    _CourseRepository_Delete_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

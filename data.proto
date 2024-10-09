@@ -14,49 +14,41 @@ message Person {
     string Email = 5;
     uint32 Age = 6; 
     string Type = 7;
+    repeated Course Courses = 8;
+}
+
+message Course {
+    uint64 ID = 1;
+    string Guid = 2;
+    string Name = 3;
+}
+
+message CourseList {
+    repeated Course courses = 1;
 }
 
 message PersonList {
     repeated Person people = 1;
 }
 
-// Get One And Get All Person Requests inputs.
-message PersonByGuidRequest {
-    string Guid = 2;
-}
-
 message Filters {
     map<string, string> filters = 1;
 }
 
-service PersonRepository {
-    // rpc CreatePerson(Person) returns (Person);
-    // rpc UpdatePerson(Person) returns (Person);
-    // rpc GetPersonByGuid(PersonByGuidRequest) returns (Person);
-    rpc FindAllPeople(Filters) returns (PersonList);
+message Guid {
+    string guid = 1;
 }
 
-// // The request message containing the task to be added.
-// message AddTaskRequest {
-//     string title = 1;
-// }
+service PersonRepository {
+    rpc Save(Person) returns (Person);
+    rpc GetByGuid(Guid) returns (Person);
+    rpc GetAll(Filters) returns (PersonList);
+    rpc Delete(Person) returns (Guid);
+}
 
-// // The response message containing the added task.
-// message Task {
-//     string id = 1;
-//     string title = 2;
-// }
-
-// // The request message for listing tasks.
-// message ListTasksRequest {}
-
-// // The response message containing the list of tasks.
-// message ListTasksResponse {
-//     repeated Task tasks = 1;
-// }
-
-// The Task service definition.
-// service TaskService {
-//     rpc AddTask(AddTaskRequest) returns (Task);
-//     rpc ListTasks(ListTasksRequest) returns (ListTasksResponse);
-// }
+service CourseRepository {
+    rpc Save(Course) returns (Course);
+    rpc GetByGuid(Guid) returns (Course);
+    rpc GetAll(Filters) returns (CourseList);
+    rpc Delete(Course) returns (Guid);
+}
