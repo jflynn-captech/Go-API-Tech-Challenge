@@ -1,25 +1,17 @@
 package repository
 
 import (
+	"context"
 	"fmt"
 	"strings"
 
 	"gorm.io/gorm"
 	"jf.go.techchallenge.data/internal/applog"
 	"jf.go.techchallenge.data/internal/models"
+	pb "jf.go.techchallenge.data/protodata"
 )
 
-type Course interface {
-	FindAll(filters Filters) ([]models.Course, error)
-
-	FindOne(guid string) (models.Course, error)
-
-	Save(course *models.Course) error
-
-	Delete(course *models.Course) error
-}
-
-func NewCourse(db *gorm.DB, logger *applog.AppLogger) Course {
+func NewCourse(db *gorm.DB, logger *applog.AppLogger) pb.CourseRepositoryServer {
 	return CourseRepositoryImpl{
 		db:     db,
 		logger: logger,
@@ -27,41 +19,60 @@ func NewCourse(db *gorm.DB, logger *applog.AppLogger) Course {
 }
 
 type CourseRepositoryImpl struct {
+	pb.UnimplementedCourseRepositoryServer
 	db     *gorm.DB
 	logger *applog.AppLogger
 }
 
-func (s CourseRepositoryImpl) FindAll(filters Filters) ([]models.Course, error) {
+func courseFromModel(modelCourse models.Course) *pb.Course {
+	return &pb.Course{
+		ID:   uint64(modelCourse.ID),
+		Guid: modelCourse.Guid,
+		Name: modelCourse.Name,
+	}
+}
+
+func (s CourseRepositoryImpl) GetAll(ctx context.Context, filters *pb.Filters) (*pb.CourseList, error) {
 	var courses []models.Course
 	tx := s.db.Table("course")
 
-	for key, value := range filters {
+	for key, value := range filters.Filters {
 		tx.Where(fmt.Sprintf("%s like ?", key), strings.Join([]string{"%", value, "%"}, ""))
 	}
 
 	result := tx.Find(&courses)
-	return courses, LogDBErr(s.logger, result.Error, "Failed to query courses table")
+
+	var pbCourses []*pb.Course
+	for _, course := range courses {
+		pbCourses = append(pbCourses, courseFromModel(course))
+	}
+
+	return &pb.CourseList{Courses: pbCourses}, LogDBErr(s.logger, result.Error, "Failed to query courses table")
 }
 
-func (s CourseRepositoryImpl) FindOne(guid string) (models.Course, error) {
+func (s CourseRepositoryImpl) GetByGuid(ctx context.Context, guid *pb.Guid) (*pb.Course, error) {
 	var course models.Course
 
 	result := s.db.Table("course").Find(&course, "guid = ?", guid)
 
 	if result.RowsAffected == 0 {
-		return course, fmt.Errorf("Course: %s Not Found", guid)
+		return nil, fmt.Errorf("Course: %s Not Found", guid)
 	}
 
-	return course, LogDBErr(s.logger, result.Error, "Failed to Query Course Table")
+	return courseFromModel(course), LogDBErr(s.logger, result.Error, "Failed to Query Course Table")
 }
 
-func (s CourseRepositoryImpl) Save(course *models.Course) error {
-	return LogDBErr(s.logger, s.db.Save(course).Error, "Failed to Save Course")
+func (s CourseRepositoryImpl) Save(ctx context.Context, course *pb.Course) (*pb.Course, error) {
+	saveErr := LogDBErr(s.logger, s.db.Save(course).Error, "Failed to Save Course")
+	if saveErr != nil {
+		return nil, saveErr
+	}
+	return s.GetByGuid(ctx, &pb.Guid{Guid: course.Guid})
 }
 
-func (s CourseRepositoryImpl) Delete(course *models.Course) error {
+func (s CourseRepositoryImpl) Delete(ctx context.Context, course *pb.Course) (*pb.Guid, error) {
 	// Handle deleting the courses
-	return s.db.Transaction(func(tx *gorm.DB) error {
+	return &pb.Guid{Guid: course.Guid}, s.db.Transaction(func(tx *gorm.DB) error {
 		result := tx.Delete(&models.PersonCourse{}, "course_id = ?", course.ID)
 
 		if err := LogDBErr(s.logger, result.Error, "Failed to delete person_course for course record"); err != nil {
