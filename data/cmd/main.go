@@ -55,8 +55,11 @@ func main() {
 
 	personRepository := repository.NewPerson(db, logger)
 
+	courseRepository := repository.NewCourse(db, logger)
+
 	s := grpc.NewServer()
 	pb.RegisterPersonRepositoryServer(s, personRepository)
+	pb.RegisterCourseRepositoryServer(s, courseRepository)
 
 	log.Println("Server is running on port 50051...")
 	if err := s.Serve(lis); err != nil {
