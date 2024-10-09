@@ -14,9 +14,7 @@ import (
 
 	"jf.go.techchallenge/internal/applog"
 	"jf.go.techchallenge/internal/config"
-	"jf.go.techchallenge/internal/database"
 	"jf.go.techchallenge/internal/handler"
-	"jf.go.techchallenge/internal/repository"
 	"jf.go.techchallenge/internal/services"
 	"jf.go.techchallenge/protodata"
 )
@@ -25,18 +23,12 @@ func main() {
 	fx.New(
 		fx.Provide(
 			config.New,
-			database.New,
 			func() *log.Logger { return log.New(os.Stdout, "\r\n", log.LstdFlags) },
 			applog.New,
-			repository.NewPerson,
-			repository.NewCourse,
 
-			services.NewPerson,
-			services.NewCourse,
-
-			func() *grpc.ClientConn {
+			func(config *config.Configuration) *grpc.ClientConn {
 				// todo look into WithInsecure alternative?
-				conn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+				conn, err := grpc.NewClient(config.RpcTarget, grpc.WithTransportCredentials(insecure.NewCredentials()))
 
 				if err != nil {
 					log.Fatalf("Failed to connect to grpc service", err)
@@ -47,6 +39,12 @@ func main() {
 			func(conn *grpc.ClientConn) protodata.PersonRepositoryClient {
 				return protodata.NewPersonRepositoryClient(conn)
 			},
+
+			func(conn *grpc.ClientConn) protodata.CourseRepositoryClient {
+				return protodata.NewCourseRepositoryClient(conn)
+			},
+			services.NewPerson,
+			services.NewCourse,
 
 			TagRoute(handler.GetOnePerson),
 			TagRoute(handler.GetAllPersons),

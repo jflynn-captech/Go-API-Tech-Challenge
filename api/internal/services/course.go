@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"net/url"
 	"strings"
 
@@ -8,39 +9,38 @@ import (
 	"jf.go.techchallenge/internal/apperror"
 	"jf.go.techchallenge/internal/applog"
 	"jf.go.techchallenge/internal/models"
-	"jf.go.techchallenge/internal/repository"
+	"jf.go.techchallenge/protodata"
 )
 
 type Course struct {
-	logger     *applog.AppLogger
-	repository repository.Course
+	logger       *applog.AppLogger
+	courseClient protodata.CourseRepositoryClient
 }
 
-func NewCourse(logger *applog.AppLogger, repository repository.Course) *Course {
+func NewCourse(logger *applog.AppLogger, courseClient protodata.CourseRepositoryClient) *Course {
 	return &Course{
-		logger:     logger,
-		repository: repository,
+		logger:       logger,
+		courseClient: courseClient,
 	}
 }
 
-func (s Course) GetOneByGuid(guid string) (models.Course, error) {
-	return s.repository.FindOne(guid)
+func (s Course) GetOneByGuid(guid string) (*protodata.Course, error) {
+	return s.courseClient.GetByGuid(context.Background(), &protodata.Guid{Guid: guid})
 }
 
-func (s Course) Update(guid string, input models.CourseInput) (models.Course, error) {
+func (s Course) Update(guid string, input models.CourseInput) (*protodata.Course, error) {
 	course, err := s.GetOneByGuid(guid)
 	if err != nil {
 		return course, err
 	}
 
-	err = s.parse(input, &course)
+	err = s.parse(input, course)
 
 	if err != nil {
 		return course, err
 	}
 
-	err = s.repository.Save(&course)
-	return course, err
+	return s.courseClient.Save(context.Background(), course)
 }
 
 func (s Course) Delete(guid string) error {
@@ -49,37 +49,41 @@ func (s Course) Delete(guid string) error {
 		return err
 	}
 
-	return s.repository.Delete(&course)
+	_, err = s.courseClient.Delete(context.Background(), course)
+	return err
 }
 
-func (s Course) Create(input models.CourseInput) (models.Course, error) {
-	newCourse := models.Course{}
+func (s Course) Create(input models.CourseInput) (*protodata.Course, error) {
+	newCourse := protodata.Course{}
 
 	err := s.parse(input, &newCourse)
 
 	if err != nil {
-		return newCourse, err
+		return nil, err
 	}
 	newCourse.Guid = uuid.NewString()
-	err = s.repository.Save(&newCourse)
-	return newCourse, err
+	return s.courseClient.Save(context.Background(), &newCourse)
 }
 
 var courseFilters = MakeFilterColumns(ValidFilters{
 	"Name",
 })
 
-func (s Course) GetAll(urlParams url.Values) ([]models.Course, error) {
+func (s Course) GetAll(urlParams url.Values) ([]*protodata.Course, error) {
 	filters, err := ParseURLFilters(urlParams, courseFilters)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return s.repository.FindAll(filters)
+	list, err := s.courseClient.GetAll(context.Background(), &protodata.Filters{Filters: filters})
+	if err != nil {
+		return nil, err
+	}
+	return list.Courses, err
 }
 
-func (s Course) parse(input models.CourseInput, course *models.Course) error {
+func (s Course) parse(input models.CourseInput, course *protodata.Course) error {
 	var errors []error
 
 	if strings.Trim(input.Name, " ") == "" {

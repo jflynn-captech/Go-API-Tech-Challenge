@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"jf.go.techchallenge/internal/apperror"
-	"jf.go.techchallenge/internal/repository"
 )
 
 // Utility Responsible for parsing filters from a url.
@@ -35,9 +34,9 @@ func MakeFilterColumns(filters ValidFilters) FilterColumns {
 // Validates the url.Values against the FilterColumns
 // Returns the converted Filters used by repositories for searching.
 // Error if any url value is provided that does not match any of the FilterColumns
-func ParseURLFilters(urlParam url.Values, fc FilterColumns) (repository.Filters, error) {
+func ParseURLFilters(urlParam url.Values, fc FilterColumns) (map[string]string, error) {
 
-	returnKeys := make(repository.Filters)
+	returnKeys := make(map[string]string)
 
 	errors := []error{}
 

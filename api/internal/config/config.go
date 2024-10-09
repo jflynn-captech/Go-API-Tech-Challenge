@@ -3,23 +3,12 @@ package config
 import (
 	"fmt"
 	"os"
-	"strconv"
 
 	"jf.go.techchallenge/internal/applog"
 )
 
-type Database struct {
-	User         string
-	Password     string
-	Name         string
-	Host         string
-	Port         string
-	RetrySeconds int
-}
-
 type Configuration struct {
-	Database Database
-	LogLevel string
+	RpcTarget string
 }
 
 type EnvProvider interface {
@@ -39,57 +28,13 @@ func New(log *applog.AppLogger) (*Configuration, error) {
 }
 
 func NewWithProvider(log *applog.AppLogger, provider EnvProvider) (*Configuration, error) {
-	databaseName, databaseNameSet := provider.Env("DATABASE_NAME")
-	if !databaseNameSet {
+	rpcTarget, rpcTargetSet := provider.Env("RPC_TARGET")
+	if !rpcTargetSet {
 		return nil, fmt.Errorf("database environment variable must be set")
 	}
 
-	databaseUser, databaseUserSet := provider.Env("DATABASE_USER")
-	if !databaseUserSet {
-		return nil, fmt.Errorf("database user environment variable must be set")
-	}
-
-	databasePassword, databasePasswordSet := provider.Env("DATABASE_PASSWORD")
-	if !databasePasswordSet {
-		return nil, fmt.Errorf("database passsord environment variable must be set")
-	}
-
-	databaseHost, databaseHostSet := provider.Env("DATABASE_HOST")
-	if !databaseHostSet {
-		return nil, fmt.Errorf("database host environment variable must bet set")
-	}
-
-	databasePort, databasePortSet := provider.Env("DATABASE_PORT")
-	if !databasePortSet {
-		return nil, fmt.Errorf("database port environment variable must be set")
-	}
-
-	retryString, retrySet := provider.Env("DATABASE_RETRY_DURATION_SECONDS")
-	if !retrySet {
-		retryString = "5"
-	}
-
-	databaseRetry, err := strconv.Atoi(retryString)
-	if err != nil {
-		log.Debug("Error converting DATABASE_RETRY_DURATION_SECONDS property", err)
-		return nil, fmt.Errorf("DATABASE_RETRY_DURATION_SECONDS must be a number ")
-	}
-
-	logLevel, logLevelSet := provider.Env("LOG_LEVEL")
-	if !logLevelSet {
-		logLevel = "DEBUG"
-	}
-
 	config := &Configuration{
-		LogLevel: logLevel,
-		Database: Database{
-			RetrySeconds: databaseRetry,
-			User:         databaseUser,
-			Name:         databaseName,
-			Password:     databasePassword,
-			Host:         databaseHost,
-			Port:         databasePort,
-		},
+		RpcTarget: rpcTarget,
 	}
 
 	return config, nil
